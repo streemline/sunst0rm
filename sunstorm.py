@@ -66,7 +66,7 @@ def prep_restore(ipsw, blob, board, kpp, legacy, skip_baseband):
 
     # get the ramdisk name
     ramdisk_path = manifest.get_comp(board, 'RestoreRamDisk')
-    if ramdisk_path == None:
+    if ramdisk_path is None:
         print("[!] Error: BoardConfig was not recognized")
         sys.exit(1)
 
@@ -149,11 +149,37 @@ def prep_restore(ipsw, blob, board, kpp, legacy, skip_baseband):
     # extract the kernel using pyimg4 like this: pyimg4 im4p extract -i kernelcache -o kcache.raw --extra kpp.bin
     print('[*] Extracting ramdisk')
     if kpp:
-        subprocess.run([sys.executable, '-m', 'pyimg4', 'im4p', 'extract', '-i',
-                       'work/' + kernelcache, '-o', 'work/kcache.raw', '--extra', 'work/kpp.bin'])
+        subprocess.run(
+            [
+                sys.executable,
+                '-m',
+                'pyimg4',
+                'im4p',
+                'extract',
+                '-i',
+                f'work/{kernelcache}',
+                '-o',
+                'work/kcache.raw',
+                '--extra',
+                'work/kpp.bin',
+            ]
+        )
+
     else:
-        subprocess.run([sys.executable, '-m', 'pyimg4', 'im4p', 'extract',
-                       '-i', 'work/' + kernelcache, '-o', 'work/kcache.raw'])
+        subprocess.run(
+            [
+                sys.executable,
+                '-m',
+                'pyimg4',
+                'im4p',
+                'extract',
+                '-i',
+                f'work/{kernelcache}',
+                '-o',
+                'work/kcache.raw',
+            ]
+        )
+
 
     # patch the kernel using kernel64patcher like this: Kernel64Patcher kcache.raw krnl.patched -f -a
     print('[*] Patching kernel')
@@ -191,7 +217,6 @@ def prep_restore(ipsw, blob, board, kpp, legacy, skip_baseband):
             print('[*] Cleaning')
             subprocess.run(['/bin/rm', '-rf', 'work'])
             print('[*] Done!')
-            sys.exit(0)
         else:
             # dont restore device but tell user to enter pwndfu
             print('[!] You need to enter pwndfu')
@@ -200,14 +225,12 @@ def prep_restore(ipsw, blob, board, kpp, legacy, skip_baseband):
                 print('[!] You can restore the device later using futurestore like this: futurerestore -t blob --use-pwndfu --skip-blob --rdsk work/ramdisk.im4p --rkrn work/krnl.im4p --latest-sep --no-baseband ipsw.ipsw')
             else:
                 print('[!] You can restore the device later using futurestore like this: futurerestore -t blob --use-pwndfu --skip-blob --rdsk work/ramdisk.im4p --rkrn work/krnl.im4p --latest-sep --latest-baseband ipsw.ipsw')
-            # exit
-            sys.exit(0)
     else:
         print('[*] Exiting')
         # clean up
         subprocess.run(['/bin/rm', '-rf', 'work'])
-        # exit
-        sys.exit(0)
+
+    sys.exit(0)
 
 
 def prep_boot(ipsw, blob, board, kpp, identifier, legacy):
@@ -244,13 +267,33 @@ def prep_boot(ipsw, blob, board, kpp, identifier, legacy):
 
     # decrypt ibss like this:  img4 -i ibss -o ibss.dmg -k ivkey
     print('[*] Decrypting IBSS')
-    subprocess.run(['/usr/local/bin/img4', '-i', 'work/' + ibss,
-                   '-o', 'work/ibss.dmg', '-k', ibss_iv + ibss_key])
+    subprocess.run(
+        [
+            '/usr/local/bin/img4',
+            '-i',
+            f'work/{ibss}',
+            '-o',
+            'work/ibss.dmg',
+            '-k',
+            ibss_iv + ibss_key,
+        ]
+    )
+
 
     # decrypt ibec like this:  img4 -i ibec -o ibec.dmg -k ivkey
     print('[*] Decrypting IBEC')
-    subprocess.run(['/usr/local/bin/img4', '-i', 'work/' + ibec,
-                   '-o', 'work/ibec.dmg', '-k', ibec_iv + ibec_key])
+    subprocess.run(
+        [
+            '/usr/local/bin/img4',
+            '-i',
+            f'work/{ibec}',
+            '-o',
+            'work/ibec.dmg',
+            '-k',
+            ibec_iv + ibec_key,
+        ]
+    )
+
 
     # patch ibss like this:  iBoot64Patcher ibss.dmg ibss.patched
     print('[*] Patching IBSS')
@@ -279,22 +322,43 @@ def prep_boot(ipsw, blob, board, kpp, identifier, legacy):
     # get the names of the devicetree and trustcache
     print('[*] Getting DeviceTree and TrustCache')
     # read manifest from work/BuildManifest.plist
-    if legacy:
-        devicetree = manifest.get_comp(board, 'DeviceTree')
-    else:
+    if not legacy:
         trustcache = manifest.get_comp(board, 'StaticTrustCache')
-        devicetree = manifest.get_comp(board, 'DeviceTree')
-
+    devicetree = manifest.get_comp(board, 'DeviceTree')
     # sign them like this  img4 -i devicetree -o devicetree.img4 -M IM4M -T rdtr
     print('[*] Signing DeviceTree')
-    subprocess.run(['/usr/local/bin/img4', '-i', 'work/' + devicetree,
-                   '-o', 'work/devicetree.img4', '-M', 'IM4M', '-T', 'rdtr'])
+    subprocess.run(
+        [
+            '/usr/local/bin/img4',
+            '-i',
+            f'work/{devicetree}',
+            '-o',
+            'work/devicetree.img4',
+            '-M',
+            'IM4M',
+            '-T',
+            'rdtr',
+        ]
+    )
+
 
     # sign them like this   img4 -i trustcache -o trustcache.img4 -M IM4M -T rtsc
     print('[*] Signing TrustCache')
     if not legacy:
-        subprocess.run(['/usr/local/bin/img4', '-i', 'work/' + trustcache,
-                       '-o', 'work/trustcache.img4', '-M', 'IM4M', '-T', 'rtsc'])
+        subprocess.run(
+            [
+                '/usr/local/bin/img4',
+                '-i',
+                f'work/{trustcache}',
+                '-o',
+                'work/trustcache.img4',
+                '-M',
+                'IM4M',
+                '-T',
+                'rtsc',
+            ]
+        )
+
 
     # grab kernelcache from manifest
     print('[*] Getting KernelCache')
@@ -303,11 +367,37 @@ def prep_boot(ipsw, blob, board, kpp, identifier, legacy):
     # extract the kernel like this:  pyimg4 im4p extract -i kernelcache -o kcache.raw --extra kpp.bin
     print('[*] Extracting kernel')
     if kpp:
-        subprocess.run([sys.executable, '-m', 'pyimg4', 'im4p', 'extract', '-i',
-                       'work/' + kernelcache, '-o', 'work/kcache.raw', '--extra', 'work/kpp.bin'])
+        subprocess.run(
+            [
+                sys.executable,
+                '-m',
+                'pyimg4',
+                'im4p',
+                'extract',
+                '-i',
+                f'work/{kernelcache}',
+                '-o',
+                'work/kcache.raw',
+                '--extra',
+                'work/kpp.bin',
+            ]
+        )
+
     else:
-        subprocess.run([sys.executable, '-m', 'pyimg4', 'im4p', 'extract',
-                       '-i', 'work/' + kernelcache, '-o', 'work/kcache.raw'])
+        subprocess.run(
+            [
+                sys.executable,
+                '-m',
+                'pyimg4',
+                'im4p',
+                'extract',
+                '-i',
+                f'work/{kernelcache}',
+                '-o',
+                'work/kcache.raw',
+            ]
+        )
+
 
     # patch it like this:   Kernel64Patcher kcache.raw krnlboot.patched -f
     print('[*] Patching kernel')
@@ -379,7 +469,7 @@ def main():
         prep_restore(args.ipsw, args.blob, args.boardconfig,
                      args.kpp, args.legacy, args.skip_baseband)
     elif args.boot:
-        if args.identifier == None:
+        if args.identifier is None:
             print('[!] You need to specify an identifier')
             sys.exit(0)
         prep_boot(args.ipsw, args.blob, args.boardconfig,
